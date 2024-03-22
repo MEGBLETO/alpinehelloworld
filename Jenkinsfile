@@ -95,3 +95,4 @@ stage('Push image in production and deploy it') {
     }
   }
 }
+  }
