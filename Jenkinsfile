@@ -52,47 +52,47 @@ pipeline {
       }
     }
     stage('Login and Push Image on docker hub') {
-  agent any
-  steps {
-    script {
-      withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-        sh 'echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin'
-        sh 'docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
+      agent any
+      steps {
+        script {
+          withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+            sh 'echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin'
+            sh 'docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
+          }
+        }
       }
     }
-  }
-}
-  
     stage('Push image in staging and deploy it') {
-  when {
-    expression { GIT_BRANCH == 'origin/master' }
-  }
-  agent any
-  steps {
-    script {
-      withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-        sh 'heroku container:login'
-        sh 'heroku create $STAGING || echo "project already exist"'
-        sh 'heroku container:push web -a $STAGING'
-        sh 'heroku container:release web -a $STAGING'
+      when {
+        expression { GIT_BRANCH == 'origin/master' }
+      }
+      agent any
+      steps {
+        script {
+          withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
+            sh 'heroku container:login'
+            sh 'heroku create $STAGING || echo "project already exist"'
+            sh 'heroku container:push web -a $STAGING'
+            sh 'heroku container:release web -a $STAGING'
+          }
+        }
+      }
+    }
+    stage('Push image in production and deploy it') {
+      when {
+        expression { GIT_BRANCH == 'origin/production' }
+      }
+      agent any
+      steps {
+        script {
+          withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
+            sh 'heroku container:login'
+            sh 'heroku create $PRODUCTION || echo "project already exist"'
+            sh 'heroku container:push web -a $PRODUCTION'
+            sh 'heroku container:release web -a $PRODUCTION'
+          }
+        }
       }
     }
   }
 }
-stage('Push image in production and deploy it') {
-  when {
-    expression { GIT_BRANCH == 'origin/production' }
-  }
-  agent any
-  steps {
-    script {
-      withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-        sh 'heroku container:login'
-        sh 'heroku create $PRODUCTION || echo "project already exist"'
-        sh 'heroku container:push web -a $PRODUCTION'
-        sh 'heroku container:release web -a $PRODUCTION'
-      }
-    }
-  }
-}
-  }
