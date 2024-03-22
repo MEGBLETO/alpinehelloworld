@@ -64,43 +64,33 @@ pipeline {
 }
   
     stage('Push image in staging and deploy it') {
-      when {
-        expression { GIT_BRANCH == 'origin/master' }
-      }
-      agent any
-      environment {
-        HEROKU_API_KEY = credentials('heroku_api_key')
-      }  
-      steps {
-        script {
-          sh '''
-            npm i -g heroku@7.68.0
-            heroku container:login
-            heroku create $STAGING || echo "project already exist"
-            heroku container:push web -a $STAGING
-            heroku container:release web -a $STAGING
-          '''
-        }
+  when {
+    expression { GIT_BRANCH == 'origin/master' }
+  }
+  agent any
+  steps {
+    script {
+      withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
+        sh 'heroku container:login'
+        sh 'heroku create $STAGING || echo "project already exist"'
+        sh 'heroku container:push web -a $STAGING'
+        sh 'heroku container:release web -a $STAGING'
       }
     }
-    stage('Push image in production and deploy it') {
-      when {
-        expression { GIT_BRANCH == 'origin/production' }
-      }
-      agent any
-      environment {
-        HEROKU_API_KEY = credentials('heroku_api_key')
-      }  
-      steps {
-        script {
-          sh '''
-            npm i -g heroku@7.68.0
-            heroku container:login
-            heroku create $PRODUCTION || echo "project already exist"
-            heroku container:push web -a $PRODUCTION
-            heroku container:release web -a $PRODUCTION
-          '''
-        }
+  }
+}
+stage('Push image in production and deploy it') {
+  when {
+    expression { GIT_BRANCH == 'origin/production' }
+  }
+  agent any
+  steps {
+    script {
+      withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
+        sh 'heroku container:login'
+        sh 'heroku create $PRODUCTION || echo "project already exist"'
+        sh 'heroku container:push web -a $PRODUCTION'
+        sh 'heroku container:release web -a $PRODUCTION'
       }
     }
   }
