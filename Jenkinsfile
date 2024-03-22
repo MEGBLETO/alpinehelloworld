@@ -52,19 +52,17 @@ pipeline {
       }
     }
     stage('Login and Push Image on docker hub') {
-      agent any
-      environment {
-        DOCKERHUB_PASSWORD = credentials('dockerhub-login')
-      }            
-      steps {
-        script {
-          sh '''
-              echo $DOCKERHUB_PASSWORD | docker login -u $ID_DOCKER --password-stdin
-              docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}
-          '''
-        }
+  agent any
+  steps {
+    script {
+      withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+        sh 'echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin'
+        sh 'docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
       }
-    }    
+    }
+  }
+}
+  
     stage('Push image in staging and deploy it') {
       when {
         expression { GIT_BRANCH == 'origin/master' }
