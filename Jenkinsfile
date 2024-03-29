@@ -15,7 +15,7 @@ pipeline {
       agent any
       steps {
         script {
-          sh 'docker build -t ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG} .'
+          sh '/usr/local/bin/docker build -t ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG} .'
         }
       }
     }
@@ -25,8 +25,8 @@ pipeline {
         script {
           sh '''
              echo "Clean Environment"
-             docker rm -f $IMAGE_NAME || echo "container does not exist"
-             docker run --name $IMAGE_NAME -d -p ${PORT_EXPOSED}:5000 -e PORT=5000 ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}
+             /usr/local/bin/docker rm -f $IMAGE_NAME || echo "container does not exist"
+             /usr/local/bin/docker run --name $IMAGE_NAME -d -p ${PORT_EXPOSED}:5000 -e PORT=5000 ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}
              sleep 5
           '''
         }
@@ -47,8 +47,8 @@ pipeline {
       steps {
         script {
           sh '''
-            docker stop $IMAGE_NAME
-            docker rm $IMAGE_NAME
+            /usr/local/bin/docker stop $IMAGE_NAME
+            /usr/local/bin/docker rm $IMAGE_NAME
           '''
         }
       }
@@ -59,7 +59,7 @@ pipeline {
         script {
           withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
             sh 'echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin'
-            sh 'docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
+            sh '/usr/local/bin/docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
           }
         }
       }
