@@ -6,6 +6,8 @@ pipeline {
     PORT_EXPOSED = "54993" // Host port mapped to the container's exposed port
     STAGING = "${ID_DOCKER}-staging"
     PRODUCTION = "${ID_DOCKER}-production"
+    PROD_APP_ENDPOINT = "https://nelzer95-staging-ab629589f27f.herokuapp.com/" // Static production endpoint
+    STG_APP_ENDPOINT = "https://nelzer95-staging-ab629589f27f.herokuapp.com/" // Static staging endpoint
   }
   agent none
   stages {
@@ -95,4 +97,12 @@ pipeline {
       }
     }
   }
+   post {
+       success {
+         slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL}) - PROD URL => http://${PROD_APP_ENDPOINT} , STAGING URL => http://${STG_APP_ENDPOINT}")
+         }
+      failure {
+            slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+          }   
+    } 
 }
