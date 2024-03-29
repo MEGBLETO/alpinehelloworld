@@ -72,10 +72,10 @@ pipeline {
       steps {
         script {
           withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-            sh 'heroku container:login'
-            sh 'heroku create $STAGING || echo "project already exist"'
-            sh 'heroku container:push web -a $STAGING'
-            sh 'heroku container:release web -a $STAGING'
+            sh '/usr/local/bin/heroku container:login'
+            sh '/usr/local/bin/heroku create $STAGING || echo "project already exist"'
+            sh '/usr/local/bin/heroku container:push web -a $STAGING'
+            sh '/usr/local/bin/heroku container:release web -a $STAGING'
           }
         }
       }
@@ -88,10 +88,10 @@ pipeline {
       steps {
         script {
           withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-            sh 'heroku container:login'
-            sh 'heroku create $PRODUCTION || echo "project already exist"'
-            sh 'heroku container:push web -a $PRODUCTION'
-            sh 'heroku container:release web -a $PRODUCTION'
+            sh '/usr/local/bin/heroku container:login'
+            sh '/usr/local/bin/heroku create $PRODUCTION || echo "project already exist"'
+            sh '/usr/local/bin/heroku container:push web -a $PRODUCTION'
+            sh '/usr/local/bin/heroku container:release web -a $PRODUCTION'
           }
         }
       }
