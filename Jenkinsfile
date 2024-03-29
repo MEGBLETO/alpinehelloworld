@@ -1,6 +1,5 @@
 pipeline {
   environment {
-    PATH = "/usr/local/bin:${env.PATH}" // This prepends /usr/local/bin to the existing PATH
     ID_DOCKER = "${ID_DOCKER_PARAMS}" // This should be set in Jenkins job parameters
     IMAGE_NAME = "alpinehelloworld"
     IMAGE_TAG = "latest"
@@ -16,7 +15,7 @@ pipeline {
       agent any
       steps {
         script {
-          sh 'docker build -t ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG} .'
+          sh '/usr/local/bin/docker build -t ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG} .'
         }
       }
     }
@@ -26,8 +25,8 @@ pipeline {
         script {
           sh '''
              echo "Clean Environment"
-             docker rm -f $IMAGE_NAME || echo "container does not exist"
-             docker run --name $IMAGE_NAME -d -p ${PORT_EXPOSED}:5000 -e PORT=5000 ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}
+             /usr/local/bin/docker rm -f $IMAGE_NAME || echo "container does not exist"
+             /usr/local/bin/docker run --name $IMAGE_NAME -d -p ${PORT_EXPOSED}:5000 -e PORT=5000 ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}
              sleep 5
           '''
         }
@@ -48,8 +47,8 @@ pipeline {
       steps {
         script {
           sh '''
-            docker stop $IMAGE_NAME
-            docker rm $IMAGE_NAME
+            /usr/local/bin/docker stop $IMAGE_NAME
+            /usr/local/bin/docker rm $IMAGE_NAME
           '''
         }
       }
@@ -59,51 +58,51 @@ pipeline {
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-            sh 'echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin'
-            sh 'docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
+            sh 'echo $DOCKERHUB_PASS | /usr/local/bin/docker login --username $DOCKERHUB_USER --password-stdin'
+            sh '/usr/local/bin/docker push ${ID_DOCKER}/${IMAGE_NAME}:${IMAGE_TAG}'
           }
         }
       }
     }
     stage('Push image in staging and deploy it') {
       when {
-        expression { env.GIT_BRANCH == 'origin/master' }
+        expression { GIT_BRANCH == 'origin/master' }
       }
       agent any
       steps {
         script {
           withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-            sh 'heroku container:login'
-            sh 'heroku create $STAGING || echo "project already exist"'
-            sh 'heroku container:push web -a $STAGING'
-            sh 'heroku container:release web -a $STAGING'
+            sh '/usr/local/bin/heroku container:login'
+            sh '/usr/local/bin/heroku create $STAGING || echo "project already exist"'
+            sh '/usr/local/bin/heroku container:push web -a $STAGING'
+            sh '/usr/local/bin/heroku container:release web -a $STAGING'
           }
         }
       }
     }
     stage('Push image in production and deploy it') {
       when {
-        expression { env.GIT_BRANCH == 'origin/production' }
+        expression { GIT_BRANCH == 'origin/production' }
       }
       agent any
       steps {
         script {
           withCredentials([string(credentialsId: 'heroku_api_key', variable: 'HEROKU_API_KEY')]) {
-            sh 'heroku container:login'
-            sh 'heroku create $PRODUCTION || echo "project already exist"'
-            sh 'heroku container:push web -a $PRODUCTION'
-            sh 'heroku container:release web -a $PRODUCTION'
+            sh '/usr/local/bin/heroku container:login'
+            sh '/usr/local/bin/heroku create $PRODUCTION || echo "project already exist"'
+            sh '/usr/local/bin/heroku container:push web -a $PRODUCTION'
+            sh '/usr/local/bin/heroku container:release web -a $PRODUCTION'
           }
         }
       }
     }
   }
-  post {
-    success {
-      slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL}) - PROD URL => http://${PROD_APP_ENDPOINT} , STAGING URL => http://${STG_APP_ENDPOINT}")
-    }
-    failure {
-      slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
-    }   
-  } 
+   post {
+       success {
+         slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL}) - PROD URL => http://${PROD_APP_ENDPOINT} , STAGING URL => http://${STG_APP_ENDPOINT}")
+         }
+      failure {
+            slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+          }   
+    } 
 }
